@@ -1,6 +1,6 @@
 //
 //  MovieCell.swift
-//  ios101-lab5-flix1
+//  ios101-lab-flix
 //
 
 import UIKit
