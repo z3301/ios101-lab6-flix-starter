@@ -6,8 +6,10 @@
 import UIKit
 import Nuke
 
-// TODO: Add table view data source conformance
+// Conform to UITableViewDataSource
 class ViewController: UIViewController, UITableViewDataSource {
+
+    // MARK: - Table view data source method: numberOfRowsInSection
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         print("🍏 numberOfRowsInSection called with movies count: \(movies.count)")
 
@@ -15,6 +17,7 @@ class ViewController: UIViewController, UITableViewDataSource {
         return movies.count
     }
 
+    // MARK: - Table view data source method: cellForRowAt indexPath
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         // Create, configure and return a table view cell for the given row (i.e. `indexPath.row`)
 
@@ -32,7 +35,7 @@ class ViewController: UIViewController, UITableViewDataSource {
         // Configure the cell (i.e. update UI elements like labels, image views, etc.)
 
         // Unwrap the optional poster path
-        if let posterPath = movie.poster_path,
+        if let posterPath = movie.posterPath,
 
             // Create a url by appending the poster path to the base url. https://developers.themoviedb.org/3/getting-started/images
            let imageUrl = URL(string: "https://image.tmdb.org/t/p/w500" + posterPath) {
@@ -50,16 +53,16 @@ class ViewController: UIViewController, UITableViewDataSource {
     }
 
 
-    // TODO: Add table view outlet
+    // Table view outlet
     @IBOutlet weak var tableView: UITableView!
 
-    // TODO: Add property to store fetched movies array
+    // Property to store fetched movies array
     private var movies: [Movie] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // TODO: Assign table view data source
+        // Assign table view data source
         tableView.dataSource = self
 
         fetchMovies()
@@ -71,11 +74,13 @@ class ViewController: UIViewController, UITableViewDataSource {
         // URL for the TMDB Get Popular movies endpoint: https://developers.themoviedb.org/3/movies/get-popular-movies
         let url = URL(string: "https://api.themoviedb.org/3/movie/popular?api_key=b1446bbf3b4c705c6d35e7c67f59c413&language=en-US&page=1")!
 
+        let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData)
+
         // ---
         // Create the URL Session to execute a network request given the above url in order to fetch our movie data.
         // https://developer.apple.com/documentation/foundation/url_loading_system/fetching_website_data_into_memory
         // ---
-        let session = URLSession.shared.dataTask(with: url) { data, response, error in
+        let session = URLSession.shared.dataTask(with: request) { data, response, error in
 
             // Check for errors
             if let error = error {
@@ -98,9 +103,20 @@ class ViewController: UIViewController, UITableViewDataSource {
 
             // The JSONDecoder's decode function can throw an error. To handle any errors we can wrap it in a `do catch` block.
             do {
+                // MARK: - jSONDecoder with custom date formatter
+                let decoder = JSONDecoder()
 
-                // Decode the JSON data into our custom `MovieResponse` model.
-                let movieResponse = try JSONDecoder().decode(MovieResponse.self, from: data)
+                // Create a date formatter object
+                let dateFormatter = DateFormatter()
+
+                // Set the date formatter date format to match the the format of the date string we're trying to parse
+                dateFormatter.dateFormat = "yyyy-MM-dd"
+
+                // Tell the json decoder to use the custom date formatter when decoding dates
+                decoder.dateDecodingStrategy = .formatted(dateFormatter)
+
+                // Decode the JSON data into our custom `MovieFeed` model.
+                let movieResponse = try decoder.decode(MovieFeed.self, from: data)
 
                 // Access the array of movies
                 let movies = movieResponse.results
@@ -112,16 +128,17 @@ class ViewController: UIViewController, UITableViewDataSource {
                     print("✅ SUCCESS!!! Fetched \(movies.count) movies")
 
                     // Iterate over all movies and print out their details.
-                    for movie in movies {
-                        print("🍿 MOVIE ------------------")
+                    for (index, movie) in movies.enumerated() {
+                        print("🍿 MOVIE \(index) ------------------")
                         print("Title: \(movie.title)")
                         print("Overview: \(movie.overview)")
                     }
 
-                    // TODO: Store movies in the `movies` property on the view controller
                     // Update the movies property so we can access movie data anywhere in the view controller.
                     self?.movies = movies
                     print("🍏 Fetched and stored \(movies.count) movies")
+
+                    // Prompt the table view to reload its data (i.e. call the data source methods again and re-render contents)
                     self?.tableView.reloadData()
                 }
             } catch {
@@ -133,6 +150,4 @@ class ViewController: UIViewController, UITableViewDataSource {
         // Don't forget to run the session!
         session.resume()
     }
-
-
 }
