@@ -16,8 +16,8 @@ struct Movie: Decodable {
 
     // MARK: Additional properties for detail view
     let backdropPath: String? // Path used to create a URL to fetch the backdrop image
-    let voteAverage: Double
-    let releaseDate: Date
+    let voteAverage: Double?
+    let releaseDate: Date?
 
     // MARK: Custom coding keys
     // Allows us to map the property keys returned from the API that use underscores (i.e. `poster_path`)
